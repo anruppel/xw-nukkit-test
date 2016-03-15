@@ -19,33 +19,32 @@ package eu.xworlds.nukkit.servertests;
 
 import static eu.xworlds.nukkit.test.Criterias.selectLangAndWaitStarted;
 
+import org.junit.gen5.api.extension.ExtendWith;
+import org.junit.gen5.junit4.runner.JUnit5;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-import cn.nukkit.Server;
-import cn.nukkit.command.CommandReader;
-import cn.nukkit.scheduler.ServerScheduler;
+import eu.xworlds.nukkit.test.NukkitExtension;
 import eu.xworlds.nukkit.test.NukkitTestSession;
-import jline.console.ConsoleReader;
+import eu.xworlds.nukkit.test.sample.PowermockExtension;
 
 /**
  * A simple test case that stops the server via console
  * 
  * @author mepeisen
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Server.class, CommandReader.class, ConsoleReader.class, ServerScheduler.class})
-//@RunWith(JUnit5.class)
-//@ExtendWith(NukkitExtension.class)
+//@RunWith(PowerMockRunner.class)
+//@PrepareForTest({Server.class, CommandReader.class, ConsoleReader.class, ServerScheduler.class})
+@RunWith(JUnit5.class)
+@ExtendWith(NukkitExtension.class)
+@ExtendWith(PowermockExtension.class)
 public class StopCommandTest
 {
     
     /**
      * Tests selecting the language and starting the server, stopping via console
      */
-     @org.junit.Test
-//    @org.junit.gen5.api.Test
+//     @org.junit.Test
+    @org.junit.gen5.api.Test
     public void testConsoleStop()
     {
         final NukkitTestSession session = new NukkitTestSession();

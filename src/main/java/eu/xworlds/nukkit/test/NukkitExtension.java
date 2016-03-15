@@ -17,6 +17,8 @@
  */
 package eu.xworlds.nukkit.test;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
 import org.junit.gen5.api.extension.AfterEachExtensionPoint;
@@ -31,12 +33,13 @@ import org.junit.gen5.api.extension.ParameterResolutionException;
 import org.junit.gen5.api.extension.TestExtensionContext;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 
 import cn.nukkit.Server;
 import cn.nukkit.command.CommandReader;
 import cn.nukkit.scheduler.ServerScheduler;
 import eu.xworlds.nukkit.test.api.NukkitInject;
+import eu.xworlds.nukkit.test.sample.PowermockExtension;
+import eu.xworlds.nukkit.test.sample.PowermockState;
 import jline.console.ConsoleReader;
 
 /**
@@ -53,71 +56,12 @@ public class NukkitExtension implements InstancePostProcessor, MethodParameterRe
     @Override
     public void postProcessTestInstance(TestExtensionContext context) throws Exception
     {
-        // mokito support
-        MockitoAnnotations.initMocks(context.getTestInstance());
-        PowerMockito.mock(Server.class);
-        PowerMockito.mock(CommandReader.class);
-        PowerMockito.mock(ConsoleReader.class);
-        PowerMockito.mock(ServerScheduler.class);
-    }
-    
-    @Override
-    public Object resolve(Parameter param, MethodInvocationContext methodInvocationContext, ExtensionContext extensionContext) throws ParameterResolutionException
-    {
-        final Store mocks = extensionContext.getStore(NS);
-        return getMockWithoutCast(extensionContext, param.getType(), mocks);
-    }
-    
-    @Override
-    public boolean supports(Parameter param, MethodInvocationContext methodInvocationContext, ExtensionContext extensionContext) throws ParameterResolutionException
-    {
-        return param.isAnnotationPresent(NukkitInject.class);
-    }
-    
-//    /**
-//     * Calculates the mocking class
-//     * 
-//     * @param extensionContext
-//     * @param mockType
-//     * @param mocks
-//     * @return mocking class
-//     */
-//    private <T> T getMock(ExtensionContext extensionContext, Class<T> mockType, Store mocks)
-//    {
-//        return mockType.cast(mocks.getOrComputeIfAbsent(mockType, type -> mock(extensionContext, mockType, mocks)));
-//    }
-    
-    /**
-     * Calculates the mocking class
-     * 
-     * @param extensionContext
-     * @param mockType
-     * @param mocks
-     * @return mocking class
-     */
-    private Object getMockWithoutCast(ExtensionContext extensionContext, Class<?> mockType, Store mocks)
-    {
-        return mocks.getOrComputeIfAbsent(mockType, type -> mock(extensionContext, mockType, mocks));
-    }
-    
-    /**
-     * Creates a mock
-     * 
-     * @param extensionContext
-     * @param mockType
-     * @param mocks
-     * @return mocking class
-     */
-    private Object mock(ExtensionContext extensionContext, Class<?> mockType, Store mocks)
-    {
-        if (mockType.getName().equals(NukkitTestSession.class.getName()))
-        {
-            return new NukkitTestSession();
-        }
-        // TODO support additional nukkit classes
-        
-        // fall back to mockito
-        return Mockito.mock(mockType);
+        final PowermockState powermock = PowermockExtension.getState(context);
+        powermock.getClassesToPrepare().add(Server.class);
+        powermock.getClassesToPrepare().add(ConsoleReader.class);
+        powermock.getClassesToPrepare().add(CommandReader.class);
+        powermock.getClassesToPrepare().add(ServerScheduler.class);
+        powermock.getPackagesToIgnore().add("org.mockito.*");
     }
     
     /**
@@ -135,7 +79,72 @@ public class NukkitExtension implements InstancePostProcessor, MethodParameterRe
     @Override
     public void beforeEach(TestExtensionContext context) throws Exception
     {
-        // currently empty
+        // mokito support
+        final Class<?> mockitoClazz = context.getTestInstance().getClass().getClassLoader().loadClass(MockitoAnnotations.class.getName());
+        final Method initMocksMethod = mockitoClazz.getDeclaredMethod("initMocks", Object.class);
+        initMocksMethod.invoke(null, context.getTestInstance());
+    }
+    
+    @Override
+    public Object resolve(Parameter param, MethodInvocationContext methodInvocationContext, ExtensionContext extensionContext) throws ParameterResolutionException
+    {
+        final Store mocks = extensionContext.getStore(NS);
+        return getMockWithoutCast(extensionContext, param.getType(), mocks, methodInvocationContext.getInstance().getClass().getClassLoader());
+    }
+    
+    @Override
+    public boolean supports(Parameter param, MethodInvocationContext methodInvocationContext, ExtensionContext extensionContext) throws ParameterResolutionException
+    {
+        for (final Annotation annot : param.getAnnotations())
+        {
+            if (annot.annotationType().getName().equals(NukkitInject.class.getName()))
+                return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Calculates the mocking class
+     * 
+     * @param extensionContext
+     * @param mockType
+     * @param mocks
+     * @param loader
+     * @return mocking class
+     */
+    private Object getMockWithoutCast(ExtensionContext extensionContext, Class<?> mockType, Store mocks, ClassLoader loader)
+    {
+        return mocks.getOrComputeIfAbsent(mockType, type -> mock(extensionContext, mockType, mocks, loader));
+    }
+    
+    /**
+     * Creates a mock
+     * 
+     * @param extensionContext
+     * @param mockType
+     * @param mocks
+     * @param loader
+     * @return mocking class
+     */
+    private Object mock(ExtensionContext extensionContext, Class<?> mockType, Store mocks, ClassLoader loader)
+    {
+        try
+        {
+            if (mockType.getName().equals(NukkitTestSession.class.getName()))
+            {
+                return loader.loadClass(NukkitTestSession.class.getName()).newInstance();
+            }
+            // TODO support additional nukkit classes
+            
+            // fall back to mockito
+            final Class<?> mockitoClazz = loader.loadClass(Mockito.class.getName());
+            final Method mockMethod = mockitoClazz.getDeclaredMethod("mock", Class.class);
+            return mockMethod.invoke(null, mockType);
+        }
+        catch (Exception e)
+        {
+            throw new IllegalStateException(e);
+        }
     }
     
 }
