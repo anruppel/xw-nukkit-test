@@ -42,6 +42,7 @@
   		<artifactId>powermock-mockito-release-full</artifactId>
   		<version>${powermock.version}</version>
   		<type>pom</type>
+  	</dependency>
   	<dependency>
   		<groupId>org.junit</groupId>
   		<artifactId>junit5-api</artifactId>
@@ -57,7 +58,6 @@
     	<artifactId>junit5-engine</artifactId>
     	<version>${junit.gen5.version}</version>
     </dependency>
-  	</dependency>
 <!--   	<dependency>
   		<groupId>org.powermock</groupId>
   		<artifactId>powermock-classloading-base</artifactId>
