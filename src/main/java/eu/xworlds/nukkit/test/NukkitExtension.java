@@ -18,7 +18,6 @@
 package eu.xworlds.nukkit.test;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
 import org.junit.gen5.api.extension.AfterEachExtensionPoint;
@@ -80,9 +79,10 @@ public class NukkitExtension implements InstancePostProcessor, MethodParameterRe
     public void beforeEach(TestExtensionContext context) throws Exception
     {
         // mokito support
-        final Class<?> mockitoClazz = context.getTestInstance().getClass().getClassLoader().loadClass(MockitoAnnotations.class.getName());
-        final Method initMocksMethod = mockitoClazz.getDeclaredMethod("initMocks", Object.class);
-        initMocksMethod.invoke(null, context.getTestInstance());
+        // final Class<?> mockitoClazz = context.getTestInstance().getClass().getClassLoader().loadClass(MockitoAnnotations.class.getName());
+        // final Method initMocksMethod = mockitoClazz.getDeclaredMethod("initMocks", Object.class);
+        // initMocksMethod.invoke(null, context.getTestInstance());
+        MockitoAnnotations.initMocks(context.getTestInstance());
     }
     
     @Override
@@ -137,9 +137,10 @@ public class NukkitExtension implements InstancePostProcessor, MethodParameterRe
             // TODO support additional nukkit classes
             
             // fall back to mockito
-            final Class<?> mockitoClazz = loader.loadClass(Mockito.class.getName());
-            final Method mockMethod = mockitoClazz.getDeclaredMethod("mock", Class.class);
-            return mockMethod.invoke(null, mockType);
+            // final Class<?> mockitoClazz = loader.loadClass(Mockito.class.getName());
+            // final Method mockMethod = mockitoClazz.getDeclaredMethod("mock", Class.class);
+            // return mockMethod.invoke(null, mockType);
+            return Mockito.mock(mockType);
         }
         catch (Exception e)
         {
