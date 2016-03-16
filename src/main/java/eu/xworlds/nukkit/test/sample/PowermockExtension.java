@@ -64,8 +64,8 @@ public class PowermockExtension implements InstancePostProcessor, AfterEachExten
     {
         final PowermockState state = getState(context);
         state.setOrigClassLoader(Thread.currentThread().getContextClassLoader()); // JUnit4TestSuiteChunkerImpl:103
-        // TODO Auto-generated method stub
-        
+        Thread.currentThread().setContextClassLoader(context.getTestClass().getClassLoader());
+        new MockPolicyInitializerImpl(context.getTestClass()).initialize(context.getTestClass().getClassLoader());
     }
 
     @Override
@@ -74,7 +74,6 @@ public class PowermockExtension implements InstancePostProcessor, AfterEachExten
         final PowermockState state = getState(context);
         if (state.getOrigClassLoader() != null)
         {
-            // TODO Auto-generated method stub
             Thread.currentThread().setContextClassLoader(state.getOrigClassLoader()); // JUnit4TestSuiteChunkerImpl:108
             state.setOrigClassLoader(null);
         }
